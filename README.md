@@ -8,7 +8,7 @@ The idea isn't recipes. It's a feedback loop: plan, cook, measure, correct. Clau
 
 | File | What it is |
 |---|---|
-| [`project-instructions.md`](project-instructions.md) | The Project instructions, as a template. Paste into a Claude Project and fill in the [brackets] with your household. |
+| [`HATH-Kitchen-Instructions.md`](HATH-Kitchen-Instructions.md) | The Project instructions, as a template. Paste into a Claude Project and fill in the [brackets] with your household. |
 | [`inventory-template.html`](inventory-template.html) | A blank kitchen inventory page: Have / Low / Out taps, use-by dates, a generated shopping list, and a waste log. Your list is saved only in your own browser. |
 
 ## How it works
@@ -26,7 +26,7 @@ The first receipt I reconciled was within $0.08 on the 20 planned items I actual
 
 ## Getting started
 
-1. Create a Project in Claude and paste in `project-instructions.md`.
+1. Create a Project in Claude and paste in `HATH-Kitchen-Instructions.md`.
 2. Replace the [brackets] with your own eaters, stores and equipment.
 3. Ask Claude to publish `inventory-template.html` as an artifact for you, or open the file in a browser.
 4. Start with "plan this week's dinners" and let it ask what's already in the house.
