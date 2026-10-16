@@ -9,7 +9,7 @@ The idea isn't recipes. It's a feedback loop: plan, cook, measure, correct. Clau
 | File | What it is |
 |---|---|
 | [`HATH-Kitchen-Instructions.md`](HATH-Kitchen-Instructions.md) | The Project instructions, as a template. Paste into a Claude Project and fill in the [brackets] with your household. |
-| [`inventory-template.html`](inventory-template.html) | A blank kitchen inventory page: Have / Low / Out taps, use-by dates, a generated shopping list, and a waste log. Your list is saved only in your own browser. |
+| [`inventory-template.html`](inventory-template.html) | A blank kitchen inventory page: Have / Low / Out taps, use-by dates, a store filter (add your own stores; an item can belong to several), a generated shopping list per store, and a waste log. Your list is saved only in your own browser. |
 
 ## How it works
 

@@ -57,7 +57,7 @@ A project file, one section per shopping trip. Every planned item: estimate vs. 
 (What my first trip taught it: estimates were within $0.08 on the 20 items I actually bought. The total was still $90 over, entirely from off-list buying. Bagged produce was underestimated, store-brand pantry items overestimated, and bottle deposits were missing entirely.)
 
 ### Inventory and waste log
-A Claude artifact page with Have / Low / Out taps, use-by dates, a generated shopping list, and a waste log. Claude reads it before every plan and every shopping list.
+A Claude artifact page with Have / Low / Out taps, use-by dates, a store filter (each item can belong to several stores), a shopping list you can filter to one store, and a waste log. Claude reads it before every plan and every shopping list.
 - Every tossed item gets an entry: date, item, age in days, amount, reason, and a lesson that states the fix.
 - Same item tossed twice in 30 days → cut its quantity on the next list and say so.
 

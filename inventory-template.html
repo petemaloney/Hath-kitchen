@@ -94,6 +94,14 @@ textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--pa
 .wrow .age{font-size:.82rem;font-weight:700;color:var(--out);white-space:nowrap;font-variant-numeric:tabular-nums}
 .wrow .why{font-size:.88rem}
 .wrow .lesson{font-size:.82rem;color:var(--muted)}
+.stores{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:12px 0 0}
+.stores .slabel{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-right:2px}
+.spick{display:flex;flex-wrap:wrap;gap:6px 14px}
+.schk{display:flex!important;gap:6px;align-items:center;color:var(--ink)!important;font-size:.95rem!important}
+.schk input{width:auto}
+.spickwrap{display:grid;gap:8px}
+.spickwrap .btnrow input{flex:1;min-width:0}
+.badge.store{background:var(--chip);color:var(--ink)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:700;font-size:.9rem;z-index:10}
 @media (prefers-reduced-motion:no-preference){.progress span{transition:width .2s}}
 /* Wide screens (iPad landscape, desktop): fill the width, columns of groups, larger type and targets. Phone layout unchanged. */
@@ -113,7 +121,7 @@ textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--pa
 
 <main>
   <h1>Kitchen inventory</h1>
-  <p class="sub">A blank copy to try. Add what's in your fridge, pantry and freezer, then tap what changed. Your list is saved only in this browser on this device; nobody else sees it.</p>
+  <p class="sub">A blank copy to try. Add what's in your fridge, pantry and freezer, tag each item with the stores you buy it at, then tap what changed. Your list is saved only in this browser on this device; nobody else sees it.</p>
   <div class="summary" id="summary"></div>
   <nav class="modes" aria-label="Mode">
     <button type="button" data-mode="list" aria-pressed="true">List</button>
@@ -129,6 +137,7 @@ textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--pa
 <script>
 const GROUPS=["Proteins","Produce","Dairy & eggs","Pantry & starches","Frozen sides & meals","Breakfast & bread","Snacks","Drinks"];
 const state={waste:[],walkStart:new Date().toISOString(),db:null,sample:null,items:new Map(),mode:"list",walkIdx:0,skipToday:true,openEdit:null,scan:null,ready:false};
+state.store=null;try{const st=localStorage.getItem("inv-store");if(st)state.store=st;}catch(e){}
 try{const m=localStorage.getItem("inv-mode");if(m&&m!=="scan")state.mode=m;}catch(e){}
 
 const $=s=>document.querySelector(s);
@@ -142,6 +151,23 @@ function checkedText(ts){if(!ts)return "never checked";const d=new Date(ts);cons
 const checkedToday=it=>it.checkedAt&&checkedText(it.checkedAt)==="checked today";
 function needsBuying(it){return it.mode==="count"?(Number(it.count)||0)<=0:(it.status==="low"||it.status==="out");}
 function sorted(){return[...state.items.values()].sort((a,b)=>(GROUPS.indexOf(a.group)-GROUPS.indexOf(b.group))||((a.order??999)-(b.order??999))||a.name.localeCompare(b.name));}
+const NOSTORE="__none";
+const itemStores=it=>Array.isArray(it.stores)?it.stores.filter(Boolean):[];
+function allStores(){const set=new Set();state.items.forEach(it=>itemStores(it).forEach(x=>set.add(x)));return[...set].sort((a,b)=>a.localeCompare(b));}
+const storeMatch=it=>!state.store?true:state.store===NOSTORE?itemStores(it).length===0:itemStores(it).includes(state.store);
+const storeLabel=()=>!state.store?"All stores":state.store===NOSTORE?"No store":state.store;
+function canonStore(v){v=(v||"").trim();if(!v)return "";return allStores().find(n=>n.toLowerCase()===v.toLowerCase())||v;}
+function setStore(k){state.store=(k&&state.store!==k)?k:null;try{localStorage.setItem("inv-store",state.store||"");}catch(e){}render();}
+function storeBar(){const names=allStores();if(!names.length&&!state.store)return null;
+  const b=(k,t)=>{const on=k?state.store===k:!state.store;return h("button",{type:"button",class:"pill"+(on?" active":""),"aria-pressed":String(on),onclick:()=>setStore(k)},t);};
+  return h("div",{class:"stores",role:"group","aria-label":"Filter by store"},h("span",{class:"slabel",text:"Store"}),b(null,"All stores"),...names.map(n=>b(n,n)),b(NOSTORE,"No store"));}
+function storePicker(idp,selected){const sel=new Set(selected);const box=h("div",{class:"spick"});
+  const draw=()=>{const names=[...new Set([...allStores(),...sel])].sort((a,b)=>a.localeCompare(b));
+    box.replaceChildren(...(names.length?names.map((n,i)=>h("label",{class:"schk"},h("input",{type:"checkbox",id:idp+"-s"+i,checked:sel.has(n),onchange:e=>{if(e.target.checked)sel.add(n);else sel.delete(n);}}),n)):[h("span",{class:"sub",text:"No stores yet. Add the first one below."})]));};
+  const add=h("input",{type:"text",id:idp+"-new",placeholder:"Add another store"});
+  const addBtn=h("button",{type:"button",class:"btn ghost",onclick:()=>{const v=canonStore(add.value);if(v){sel.add(v);add.value="";draw();}}},"Add");
+  add.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addBtn.click();}});
+  draw();return{el:h("div",{class:"spickwrap"},box,h("div",{class:"btnrow"},add,addBtn)),value:()=>{const v=canonStore(add.value);if(v)sel.add(v);return[...sel];}};}
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"item";
 
 async function write(id,patch){
@@ -172,23 +198,24 @@ function control(it,big){
 function editor(it){
   const ub=h("input",{type:"date",id:"ub-"+it.id,value:it.useBy||""});
   const nt=h("input",{type:"text",id:"nt-"+it.id,value:it.note||"",placeholder:"Note"});
+  const sp=storePicker("ed-"+it.id,itemStores(it));
   const gp=h("select",{id:"gp-"+it.id},...GROUPS.map(g=>h("option",{value:g,selected:g===it.group},g)));
   const del=h("button",{type:"button",class:"btn danger",onclick:async()=>{
     if(del.dataset.armed!=="1"){del.dataset.armed="1";del.textContent="Tap again to delete";return;}
     try{await state.db.collection("items").doc(it.id).delete();state.openEdit=null;toast("Deleted "+it.name);}catch(e){toast("Didn't delete. Try again.");}}},"Delete item");
   return h("div",{class:"editor"},
-    h("label",{},"Use-by date",ub),h("label",{},"Note",nt),h("label",{},"Group",gp),
+    h("label",{},"Stores",sp.el),h("label",{},"Use-by date",ub),h("label",{},"Note",nt),h("label",{},"Group",gp),
     h("div",{class:"btnrow"},
-      h("button",{type:"button",class:"btn",onclick:()=>{state.openEdit=null;write(it.id,{useBy:ub.value||"",note:nt.value.trim(),group:gp.value});toast("Saved");}},"Save"),
+      h("button",{type:"button",class:"btn",onclick:()=>{state.openEdit=null;write(it.id,{stores:sp.value(),useBy:ub.value||"",note:nt.value.trim(),group:gp.value});toast("Saved");}},"Save"),
       h("button",{type:"button",class:"btn ghost",onclick:()=>{state.openEdit=null;render();}},"Cancel"),del));
 }
 
 function row(it){
-  const meta=h("div",{class:"meta"},it.note?h("span",{text:it.note}):null,useByBadge(it),h("span",{text:checkedText(it.checkedAt)}));
+  const meta=h("div",{class:"meta"},itemStores(it).length?h("span",{class:"badge store",text:itemStores(it).join(" · ")}):null,it.note?h("span",{text:it.note}):null,useByBadge(it),h("span",{text:checkedText(it.checkedAt)}));
   const open=state.openEdit===it.id;
   return h("div",{class:"row"},
     h("div",{class:"info"},h("div",{class:"name",text:it.name}),meta),control(it,false),
-    open?editor(it):h("button",{type:"button",class:"edit-toggle",onclick:()=>{state.openEdit=it.id;render();}},"Use-by, note, group"));
+    open?editor(it):h("button",{type:"button",class:"edit-toggle",onclick:()=>{state.openEdit=it.id;render();}},"Store, use-by, note, group"));
 }
 
 const onHand=it=>it.mode==="count"?(Number(it.count)||0)>0:it.status!=="out";
@@ -203,11 +230,11 @@ function summary(){const all=[...state.items.values()];const n=k=>all.filter(FIL
     pill("buy",`${buy} to buy`,buy>0),(soon||state.filter==="soon")?pill("soon",`${soon} to use by tomorrow`,soon>0):null);}
 
 function viewList(){const all=sorted();if(!all.length)return emptyState();
-  const f=state.filter&&FILTERS[state.filter];const list=f?all.filter(f.test):all;
-  const banner=h("div",{class:"showing"},h("span",{},"Showing: ",h("strong",{text:f?`${f.label} (${list.length} of ${all.length})`:`All items (${all.length})`})),
-    f?h("button",{type:"button",class:"btn ghost",onclick:()=>setFilter(null)},"Clear"):null);
+  const f=state.filter&&FILTERS[state.filter];const pool=all.filter(storeMatch);const list=f?pool.filter(f.test):pool;
+  const banner=h("div",{class:"showing"},h("span",{},"Showing: ",h("strong",{text:(f?`${f.label}`:"All items")+(state.store===NOSTORE?" with no store":state.store?` at ${storeLabel()}`:"")+` (${list.length} of ${all.length})`})),
+    (f||state.store)?h("button",{type:"button",class:"btn ghost",onclick:()=>{state.filter=null;setStore(null);}},"Clear"):null);
   const groups=GROUPS.filter(g=>list.some(i=>i.group===g)).map(g=>h("section",{class:"group"},h("h2",{text:g}),...list.filter(i=>i.group===g).map(row)));
-  return [banner,groups.length?h("div",{class:"groups"},...groups):h("p",{class:"notice",text:"Nothing matches this filter right now."})];}
+  return [storeBar(),banner,groups.length?h("div",{class:"groups"},...groups):h("p",{class:"notice",text:"Nothing matches this filter right now."})];}
 
 function walkQueue(){const l=sorted();const start=state.walkStart||new Date().toISOString();return state.skipToday?l.filter(i=>!(checkedToday(i)&&i.checkedAt<start)):l;}
 function advance(){state.walkIdx++;render();}
@@ -228,11 +255,11 @@ function viewWalk(){const q=walkQueue();const total=state.items.size;
       h("button",{type:"button",class:"btn ghost",onclick:()=>{state.walkIdx++;render();}},"Skip"),
       state.walkIdx>0?h("button",{type:"button",class:"btn ghost",onclick:()=>{state.walkIdx--;render();}},"Back"):null),skip);}
 
-function viewShop(){const buy=sorted().filter(needsBuying);
-  if(!buy.length)return h("p",{class:"notice",text:"Nothing is low or out. Items land here when you tap Low or Out, or a count hits 0."});
-  const text=GROUPS.filter(g=>buy.some(i=>i.group===g)).map(g=>g+"\n"+buy.filter(i=>i.group===g).map(i=>"- "+i.name+(i.mode==="status"&&i.status==="low"?" (low)":"")).join("\n")).join("\n\n");
+function viewShop(){const buy=sorted().filter(needsBuying).filter(storeMatch);
+  if(!buy.length)return[storeBar(),h("p",{class:"notice",text:state.store?`Nothing low or out for ${storeLabel()}.`:"Nothing is low or out. Items land here when you tap Low or Out, or a count hits 0."})];
+  const text=(state.store?storeLabel()+" list\n\n":"")+GROUPS.filter(g=>buy.some(i=>i.group===g)).map(g=>g+"\n"+buy.filter(i=>i.group===g).map(i=>"- "+i.name+(i.mode==="status"&&i.status==="low"?" (low)":"")).join("\n")).join("\n\n");
   const ta=h("textarea",{id:"shopText",readonly:true,"aria-label":"Shopping list text"});ta.value=text;
-  return[...GROUPS.filter(g=>buy.some(i=>i.group===g)).map(g=>h("section",{class:"shop"},h("h2",{text:g}),h("ul",{},...buy.filter(i=>i.group===g).map(i=>
+  return[storeBar(),...GROUPS.filter(g=>buy.some(i=>i.group===g)).map(g=>h("section",{class:"shop"},h("h2",{text:g}),h("ul",{},...buy.filter(i=>i.group===g).map(i=>
       h("li",{},h("span",{text:i.name}),h("span",{class:"state "+(i.mode==="count"?"out":i.status),text:i.mode==="count"?"0 left":i.status}))))) ),
     h("h2",{text:"Copy"}),ta,
     h("div",{class:"btnrow"},h("button",{type:"button",class:"btn",onclick:async()=>{try{await navigator.clipboard.writeText(text);toast("Copied");}catch(e){ta.focus();ta.select();toast("Selected. Use Copy from the menu.");}}},"Copy list"))];}
@@ -243,6 +270,7 @@ function viewAdd(){
   const cnt=h("input",{type:"number",id:"addCount",min:"0",value:"1",inputmode:"numeric"});
   const unit=h("input",{type:"text",id:"addUnit",placeholder:"bags, portions, packs"});
   const ub=h("input",{type:"date",id:"addUseBy"});
+  const sp=storePicker("add",state.store&&state.store!==NOSTORE?[state.store]:[]);
   const countBox=h("div",{class:"btnrow"},h("label",{style:"flex:1"},"How many",cnt),h("label",{style:"flex:2"},"Unit",unit));
   const modeCount=h("input",{type:"radio",name:"addMode",id:"addModeCount",value:"count",onchange:()=>countBox.hidden=false});
   const modeStatus=h("input",{type:"radio",name:"addMode",id:"addModeStatus",value:"status",checked:true,onchange:()=>countBox.hidden=true});
@@ -251,11 +279,11 @@ function viewAdd(){
   const form=h("form",{class:"form",onsubmit:async e=>{e.preventDefault();const n=name.value.trim();if(!n)return;
     let id=slug(n);while(state.items.has(id))id+="-2";
     const doc={name:n,group:grp.value,mode:modeCount.checked?"count":"status",count:modeCount.checked?Number(cnt.value)||0:null,unit:modeCount.checked?unit.value.trim():"",
-      status:modeCount.checked?null:"have",useBy:ub.value||"",note:"",order:999,checkedAt:new Date().toISOString()};
+      status:modeCount.checked?null:"have",stores:sp.value(),useBy:ub.value||"",note:"",order:999,checkedAt:new Date().toISOString()};
     try{await state.db.collection("items").doc(id).set(doc);toast("Added "+n);name.value="";ub.value="";}catch(err){toast("Didn't add. Try again.");}}},
     h("label",{},"Item",name),h("label",{},"Group",grp),
     h("div",{class:"seg"},h("label",{},modeStatus,"Have / Low / Out"),h("label",{},modeCount,"Keep a count")),
-    countBox,h("label",{},"Use-by date (fresh meat, fish, leftovers)",ub),
+    countBox,h("label",{},"Stores",sp.el),h("label",{},"Use-by date (fresh meat, fish, leftovers)",ub),
     h("div",{class:"btnrow"},h("button",{type:"submit",class:"btn"},"Add item")));
   return form;}
 
@@ -266,20 +294,21 @@ async function runScan(file){
 For each food or drink line (skip bags, bottle deposits, tax, totals, non-food), return one entry. Combine repeated lines of the same product into one entry with the summed quantity.
 Match each line to the existing inventory item it refers to when one clearly fits; otherwise propose a new item with a plain readable name and one group from: ${GROUPS.join(", ")}.
 Existing inventory (id, name, group, mode): ${JSON.stringify(catalog)}
-Return ONLY JSON: {"store":"...","lines":[{"receipt":"text as printed","qty":1,"match_id":"existing id or null","name":"readable name","group":"one of the groups"}]}`;
+Known store names (reuse one exactly if it matches): ${JSON.stringify(allStores())}
+Return ONLY JSON: {"store":"plain store name, e.g. Trader Joe's","lines":[{"receipt":"text as printed","qty":1,"match_id":"existing id or null","name":"readable name","group":"one of the groups"}]}`;
   try{const out=await state.sample.json(prompt,{images:[file],modelTier:"default"});
     const lines=Array.isArray(out?.lines)?out.lines:[];
-    state.scan={busy:false,store:out?.store||"",rows:lines.map(l=>({...l,qty:Math.max(1,Number(l.qty)||1),keep:true,match_id:state.items.has(l.match_id)?l.match_id:null,group:GROUPS.includes(l.group)?l.group:"Pantry & starches"}))};}
+    state.scan={busy:false,store:canonStore(out?.store||""),rows:lines.map(l=>({...l,qty:Math.max(1,Number(l.qty)||1),keep:true,match_id:state.items.has(l.match_id)?l.match_id:null,group:GROUPS.includes(l.group)?l.group:"Pantry & starches"}))};}
   catch(e){state.scan={busy:false,rows:[],err:e?.code==="not_granted"?"Reading receipts needs your OK. Allow Claude for this page, then try again.":e?.code==="rate_limited"?"Too many scans just now. Wait a minute and try again.":"Couldn't read that receipt. Try a sharper, flatter photo, or send it in chat."};}
   render();}
 
-async function applyScan(){const rows=state.scan.rows.filter(r=>r.keep);const now=new Date().toISOString();
+async function applyScan(){const rows=state.scan.rows.filter(r=>r.keep);const now=new Date().toISOString();const st=canonStore(state.scan.store);
   try{for(const r of rows){
       if(r.match_id){const it=state.items.get(r.match_id);
-        const patch=it.mode==="count"?{count:(Number(it.count)||0)+r.qty}:{status:"have"};
+        const patch=it.mode==="count"?{count:(Number(it.count)||0)+r.qty}:{status:"have"};if(st)patch.stores=[...new Set([...itemStores(it),st])];
         await state.db.collection("items").doc(it.id).update({...patch,checkedAt:now});}
       else{let id=slug(r.name);while(state.items.has(id))id+="-2";const prot=r.group==="Proteins";
-        await state.db.collection("items").doc(id).set({name:r.name,group:r.group,mode:prot?"count":"status",count:prot?r.qty:null,unit:"",status:prot?null:"have",useBy:"",note:"from receipt",order:999,checkedAt:now});}}
+        await state.db.collection("items").doc(id).set({name:r.name,group:r.group,mode:prot?"count":"status",count:prot?r.qty:null,unit:"",status:prot?null:"have",useBy:"",note:"from receipt",stores:st?[st]:[],order:999,checkedAt:now});}}
     toast(`Added ${rows.length} from the receipt`);state.scan=null;setMode("list");}
   catch(e){toast("Some lines didn't save. Check the list.");}}
 
@@ -292,6 +321,7 @@ function viewScan(){
   if(s.err)return[intro,h("p",{class:"notice",text:s.err})];
   if(!s.rows.length)return[intro,h("p",{class:"notice",text:"No food lines found on that photo."})];
   return[intro,h("h2",{text:`${s.store||"Receipt"}: ${s.rows.length} lines`}),
+    h("label",{class:"form",style:"margin-top:8px"},"Store on this receipt (tags every line you add)",h("input",{type:"text",id:"scanStore",value:s.store||"",oninput:e=>{s.store=e.target.value;}})),
     ...s.rows.map((r,i)=>{const it=r.match_id&&state.items.get(r.match_id);
       return h("div",{class:"scanrow"},
         h("input",{type:"checkbox",id:"scan-"+i,checked:r.keep,"aria-label":"Add "+r.name,onchange:e=>{r.keep=e.target.checked;}}),
