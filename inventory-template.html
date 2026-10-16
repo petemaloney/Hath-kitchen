@@ -1,0 +1,357 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kitchen Inventory Template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+/* Layout: one narrow column built for a phone in one hand; sticky mode bar; rows with tap targets on the right. Same family as Kitchen Week. */
+:root{
+  --ink:#1F3A4D; --paper:#F4F7F9; --card:#FFFFFF; --line:#C9D5DD; --muted:#5A6B77;
+  --tape:#F2D35B; --leaf:#3F7D4E; --leaf-ink:#FFFFFF;
+  --have:#3F7D4E; --low:#B7791F; --out:#B23A3A; --chip:#E8EEF2;
+  --display:"Bricolage Grotesque",system-ui,sans-serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#DCE7EE; --paper:#111C24; --card:#18262F; --line:#2E4250; --muted:#9AAAB5;
+  --tape:#8A7424; --leaf:#7BC08C; --leaf-ink:#0E1A12; --have:#7BC08C; --low:#E3B25A; --out:#E57B7B; --chip:#22343F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ink:#DCE7EE; --paper:#111C24; --card:#18262F; --line:#2E4250; --muted:#9AAAB5;
+  --tape:#8A7424; --leaf:#7BC08C; --leaf-ink:#0E1A12; --have:#7BC08C; --low:#E3B25A; --out:#E57B7B; --chip:#22343F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:17px/1.45 var(--body)}
+main{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 80px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.9rem,7vw,2.6rem);font-weight:800}
+h2{font-size:1.2rem;margin:26px 0 8px;letter-spacing:.01em}
+.sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.summary{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.pill{background:var(--chip);border-radius:999px;padding:4px 12px;font-size:.88rem;font-variant-numeric:tabular-nums}
+.pill.warn{background:var(--tape);color:var(--ink)}
+nav.modes{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);display:flex;gap:6px;overflow-x:auto;padding:12px 0;margin-top:10px;border-bottom:1px solid var(--line)}
+nav.modes button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:700 .92rem var(--body);cursor:pointer}
+nav.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button{font-family:var(--body)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--tape);outline-offset:2px}
+.notice{background:var(--card);border:1px dashed var(--line);padding:14px;border-radius:10px;color:var(--muted)}
+.group{margin-top:8px}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.row .info{min-width:0}
+.name{font-weight:700;overflow-wrap:anywhere}
+.meta{font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
+.badge{font-size:.78rem;font-weight:700;border-radius:6px;padding:1px 7px;background:var(--chip)}
+.badge.soon{background:var(--tape);color:var(--ink)}
+.badge.past{background:var(--out);color:var(--card)}
+.chips{display:flex;gap:4px}
+.chip{min-width:52px;min-height:40px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:700 .85rem var(--body);cursor:pointer;padding:0 8px}
+.chip.on.have{background:var(--have);border-color:var(--have);color:var(--leaf-ink)}
+.chip.on.low{background:var(--low);border-color:var(--low);color:var(--card)}
+.chip.on.out{background:var(--out);border-color:var(--out);color:var(--card)}
+.counter{display:flex;align-items:center;gap:4px}
+.counter .step{width:40px;height:40px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font:800 1.2rem var(--display);cursor:pointer}
+.counter .n{min-width:64px;height:40px;border:1px solid transparent;background:none;color:var(--ink);font:700 1rem var(--body);font-variant-numeric:tabular-nums;cursor:pointer;border-radius:8px}
+.counter .n.zero{color:var(--out)}
+.edit-toggle{grid-column:1/-1;justify-self:start;border:0;background:none;color:var(--muted);font-size:.8rem;padding:0;cursor:pointer;text-decoration:underline}
+.editor{grid-column:1/-1;display:grid;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.editor label,.form label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+input,select{font:1rem var(--body);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:10px;padding:10px 16px;font:700 .95rem var(--body);cursor:pointer}
+.btn.ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn.danger{background:var(--card);color:var(--out);border-color:var(--out)}
+.btn[disabled]{opacity:.5;cursor:default}
+/* walk-through */
+.walk{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;display:grid;gap:14px;margin-top:16px}
+.progress{height:6px;background:var(--chip);border-radius:6px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--leaf)}
+.walk .grp{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.walk .big{font-family:var(--display);font-size:1.7rem;font-weight:800;overflow-wrap:anywhere}
+.walk .chips .chip{flex:1;min-height:64px;font-size:1.05rem}
+.walk .counter{justify-content:center}
+.walk .counter .step{width:64px;height:64px;font-size:1.6rem}
+.walk .counter .n{font-size:1.5rem;min-width:110px;height:64px}
+.check{display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--muted)}
+.check input{width:auto}
+button.pill{border:2px solid transparent;color:var(--ink);font:.88rem var(--body);cursor:pointer;min-height:36px}
+button.pill.active{border-color:var(--ink);font-weight:700}
+.showing{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--leaf);border-radius:10px;font-size:.95rem}
+.showing .btn{padding:6px 14px}
+/* shopping */
+.shop li{padding:8px 0;border-bottom:1px dashed var(--line);list-style:none;display:flex;justify-content:space-between;gap:10px}
+.shop ul{padding:0;margin:0}
+.state{font-size:.82rem;font-weight:700}
+.state.low{color:var(--low)} .state.out{color:var(--out)}
+textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px}
+.form{display:grid;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+.seg{display:flex;gap:6px}
+.seg label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:.95rem}
+.seg input{width:auto}
+.scanrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.scanrow input[type=checkbox]{width:22px;height:22px}
+.scanrow .what{min-width:0}
+.scanrow small{display:block;color:var(--muted)}
+.waste-day{margin-top:6px}
+.wrow{padding:12px 0;border-bottom:1px solid var(--line);display:grid;gap:4px}
+.wrow .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.wrow .age{font-size:.82rem;font-weight:700;color:var(--out);white-space:nowrap;font-variant-numeric:tabular-nums}
+.wrow .why{font-size:.88rem}
+.wrow .lesson{font-size:.82rem;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:700;font-size:.9rem;z-index:10}
+@media (prefers-reduced-motion:no-preference){.progress span{transition:width .2s}}
+/* Wide screens (iPad landscape, desktop): fill the width, columns of groups, larger type and targets. Phone layout unchanged. */
+@media (min-width:900px){
+  body{font-size:18.5px}
+  main{max-width:none;padding-inline:32px}
+  .groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:0 32px;align-items:start}
+  .pill{font-size:.95rem;padding:6px 14px}
+  nav.modes button{padding:10px 18px;font-size:1rem}
+  .chip{min-height:46px;min-width:60px;font-size:.92rem}
+  .counter .step{width:46px;height:46px}
+  .counter .n{height:46px}
+  .walk,.form{max-width:760px}
+  .shop ul{columns:2;column-gap:32px}
+}
+</style>
+
+<main>
+  <h1>Kitchen inventory</h1>
+  <p class="sub">A blank copy to try. Add what's in your fridge, pantry and freezer, then tap what changed. Your list is saved only in this browser on this device; nobody else sees it.</p>
+  <div class="summary" id="summary"></div>
+  <nav class="modes" aria-label="Mode">
+    <button type="button" data-mode="list" aria-pressed="true">List</button>
+    <button type="button" data-mode="walk" aria-pressed="false">Walk-through</button>
+    <button type="button" data-mode="shop" aria-pressed="false">Shopping list</button>
+    <button type="button" data-mode="add" aria-pressed="false">Add item</button>
+        <button type="button" data-mode="waste" aria-pressed="false">Waste log</button>
+  </nav>
+  <section id="view"><p class="notice">Loading your kitchen…</p></section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const GROUPS=["Proteins","Produce","Dairy & eggs","Pantry & starches","Frozen sides & meals","Breakfast & bread","Snacks","Drinks"];
+const state={waste:[],walkStart:new Date().toISOString(),db:null,sample:null,items:new Map(),mode:"list",walkIdx:0,skipToday:true,openEdit:null,scan:null,ready:false};
+try{const m=localStorage.getItem("inv-mode");if(m&&m!=="scan")state.mode=m;}catch(e){}
+
+const $=s=>document.querySelector(s);
+function h(tag,attrs={},...kids){const el=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(v==null||v===false)continue;if(k==="class")el.className=v;else if(k.startsWith("on"))el.addEventListener(k.slice(2),v);else if(k==="text")el.textContent=v;else el.setAttribute(k,v===true?"":v);}for(const c of kids.flat()){if(c==null)continue;el.append(c.nodeType?c:document.createTextNode(c));}return el;}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,1800);}
+
+const todayISO=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);};
+function dayDiff(iso){if(!iso)return null;const a=new Date(todayISO()+"T00:00:00"),b=new Date(iso+"T00:00:00");return Math.round((b-a)/86400000);}
+const fmtDay=iso=>new Date(iso+"T00:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"});
+function checkedText(ts){if(!ts)return "never checked";const d=new Date(ts);const iso=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);const diff=dayDiff(iso);if(diff===0)return "checked today";if(diff===-1)return "checked yesterday";return "checked "+fmtDay(iso);}
+const checkedToday=it=>it.checkedAt&&checkedText(it.checkedAt)==="checked today";
+function needsBuying(it){return it.mode==="count"?(Number(it.count)||0)<=0:(it.status==="low"||it.status==="out");}
+function sorted(){return[...state.items.values()].sort((a,b)=>(GROUPS.indexOf(a.group)-GROUPS.indexOf(b.group))||((a.order??999)-(b.order??999))||a.name.localeCompare(b.name));}
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"item";
+
+async function write(id,patch){
+  if(!state.db){toast("Can't save in this view");return;}
+  const it=state.items.get(id);if(it)Object.assign(it,patch);render();
+  try{await state.db.collection("items").doc(id).update({...patch,checkedAt:new Date().toISOString()});}
+  catch(e){toast(e&&e.code==="not_granted"?"You can view but not change this list":"Didn't save. Try that tap again.");}
+}
+const setStatus=(it,s)=>write(it.id,{status:s});
+const setCount=(it,n)=>write(it.id,{count:Math.max(0,n)});
+
+function useByBadge(it){const d=dayDiff(it.useBy);if(d==null)return null;
+  if(d<0)return h("span",{class:"badge past",text:"past use-by "+fmtDay(it.useBy)});
+  if(d===0)return h("span",{class:"badge soon",text:"use today"});
+  if(d===1)return h("span",{class:"badge soon",text:"use tomorrow"});
+  return h("span",{class:"badge",text:"use by "+fmtDay(it.useBy)});}
+
+function control(it,big){
+  if(it.mode==="count"){const n=Number(it.count)||0;
+    return h("div",{class:"counter"},
+      h("button",{type:"button",class:"step","aria-label":"One less "+it.name,onclick:()=>setCount(it,n-1)},"−"),
+      h("button",{type:"button",class:"n"+(n<=0?" zero":""),title:"Mark checked",onclick:()=>setCount(it,n)},`${n} ${it.unit||""}`.trim()),
+      h("button",{type:"button",class:"step","aria-label":"One more "+it.name,onclick:()=>setCount(it,n+1)},"+"));}
+  return h("div",{class:"chips",role:"group","aria-label":it.name},...["have","low","out"].map(s=>
+    h("button",{type:"button",class:`chip ${s}${it.status===s?" on":""}`,"aria-pressed":String(it.status===s),onclick:()=>{setStatus(it,s);if(big)advance();}},s[0].toUpperCase()+s.slice(1))));
+}
+
+function editor(it){
+  const ub=h("input",{type:"date",id:"ub-"+it.id,value:it.useBy||""});
+  const nt=h("input",{type:"text",id:"nt-"+it.id,value:it.note||"",placeholder:"Note"});
+  const gp=h("select",{id:"gp-"+it.id},...GROUPS.map(g=>h("option",{value:g,selected:g===it.group},g)));
+  const del=h("button",{type:"button",class:"btn danger",onclick:async()=>{
+    if(del.dataset.armed!=="1"){del.dataset.armed="1";del.textContent="Tap again to delete";return;}
+    try{await state.db.collection("items").doc(it.id).delete();state.openEdit=null;toast("Deleted "+it.name);}catch(e){toast("Didn't delete. Try again.");}}},"Delete item");
+  return h("div",{class:"editor"},
+    h("label",{},"Use-by date",ub),h("label",{},"Note",nt),h("label",{},"Group",gp),
+    h("div",{class:"btnrow"},
+      h("button",{type:"button",class:"btn",onclick:()=>{state.openEdit=null;write(it.id,{useBy:ub.value||"",note:nt.value.trim(),group:gp.value});toast("Saved");}},"Save"),
+      h("button",{type:"button",class:"btn ghost",onclick:()=>{state.openEdit=null;render();}},"Cancel"),del));
+}
+
+function row(it){
+  const meta=h("div",{class:"meta"},it.note?h("span",{text:it.note}):null,useByBadge(it),h("span",{text:checkedText(it.checkedAt)}));
+  const open=state.openEdit===it.id;
+  return h("div",{class:"row"},
+    h("div",{class:"info"},h("div",{class:"name",text:it.name}),meta),control(it,false),
+    open?editor(it):h("button",{type:"button",class:"edit-toggle",onclick:()=>{state.openEdit=it.id;render();}},"Use-by, note, group"));
+}
+
+const onHand=it=>it.mode==="count"?(Number(it.count)||0)>0:it.status!=="out";
+const useSoon=it=>{const d=dayDiff(it.useBy);return d!=null&&d<=1;};
+const FILTERS={onhand:{label:"On hand",test:onHand},checked:{label:"Checked today",test:checkedToday},buy:{label:"To buy",test:needsBuying},soon:{label:"Use by tomorrow",test:useSoon}};
+state.filter=null;
+function setFilter(f){state.filter=(f&&state.filter!==f)?f:null;if(state.mode!=="list")setMode("list");else render();}
+function summary(){const all=[...state.items.values()];const n=k=>all.filter(FILTERS[k].test).length;
+  const pill=(key,text,warn)=>h("button",{type:"button",class:"pill"+(warn?" warn":"")+((key?state.filter===key:!state.filter)?" active":""),"aria-pressed":String(key?state.filter===key:!state.filter),onclick:()=>setFilter(key)},text);
+  const soon=n("soon"),buy=n("buy");$("#summary").replaceChildren(
+    pill(null,`${all.length} items`),pill("onhand",`${n("onhand")} on hand`),pill("checked",`${n("checked")} checked today`),
+    pill("buy",`${buy} to buy`,buy>0),(soon||state.filter==="soon")?pill("soon",`${soon} to use by tomorrow`,soon>0):null);}
+
+function viewList(){const all=sorted();if(!all.length)return emptyState();
+  const f=state.filter&&FILTERS[state.filter];const list=f?all.filter(f.test):all;
+  const banner=h("div",{class:"showing"},h("span",{},"Showing: ",h("strong",{text:f?`${f.label} (${list.length} of ${all.length})`:`All items (${all.length})`})),
+    f?h("button",{type:"button",class:"btn ghost",onclick:()=>setFilter(null)},"Clear"):null);
+  const groups=GROUPS.filter(g=>list.some(i=>i.group===g)).map(g=>h("section",{class:"group"},h("h2",{text:g}),...list.filter(i=>i.group===g).map(row)));
+  return [banner,groups.length?h("div",{class:"groups"},...groups):h("p",{class:"notice",text:"Nothing matches this filter right now."})];}
+
+function walkQueue(){const l=sorted();const start=state.walkStart||new Date().toISOString();return state.skipToday?l.filter(i=>!(checkedToday(i)&&i.checkedAt<start)):l;}
+function advance(){state.walkIdx++;render();}
+function viewWalk(){const q=walkQueue();const total=state.items.size;
+  const skip=h("label",{class:"check"},h("input",{type:"checkbox",id:"skipToday",checked:state.skipToday,onchange:e=>{state.skipToday=e.target.checked;state.walkIdx=0;state.walkStart=new Date().toISOString();render();}}),"Skip items already checked today");
+  if(!total)return emptyState();
+  if(state.walkIdx>=q.length||!q.length){return h("div",{class:"walk"},h("div",{class:"big",text:"All caught up"}),h("p",{class:"sub",text:"Every item has been checked today. The shopping list has what's low or out."}),
+    h("div",{class:"btnrow"},h("button",{type:"button",class:"btn",onclick:()=>setMode("shop")},"Open shopping list"),h("button",{type:"button",class:"btn ghost",onclick:()=>{state.walkIdx=0;state.skipToday=false;state.walkStart=new Date().toISOString();render();}},"Walk everything again")),skip);}
+  const it=q[state.walkIdx];const done=Math.min(total,total-q.length+state.walkIdx);
+  return h("div",{class:"walk"},
+    h("div",{class:"progress","aria-label":`${done} of ${total} checked`},h("span",{style:`width:${Math.round(done/total*100)}%`})),
+    h("div",{class:"grp",text:`${it.group} · ${done+1} of ${total}`}),
+    h("div",{class:"big",text:it.name}),
+    h("div",{class:"meta"},it.note?h("span",{text:it.note}):null,useByBadge(it),h("span",{text:checkedText(it.checkedAt)})),
+    control(it,true),
+    h("div",{class:"btnrow"},
+      it.mode==="count"?h("button",{type:"button",class:"btn",onclick:()=>{setCount(it,Number(it.count)||0);advance();}},"Count is right, next"):null,
+      h("button",{type:"button",class:"btn ghost",onclick:()=>{state.walkIdx++;render();}},"Skip"),
+      state.walkIdx>0?h("button",{type:"button",class:"btn ghost",onclick:()=>{state.walkIdx--;render();}},"Back"):null),skip);}
+
+function viewShop(){const buy=sorted().filter(needsBuying);
+  if(!buy.length)return h("p",{class:"notice",text:"Nothing is low or out. Items land here when you tap Low or Out, or a count hits 0."});
+  const text=GROUPS.filter(g=>buy.some(i=>i.group===g)).map(g=>g+"\n"+buy.filter(i=>i.group===g).map(i=>"- "+i.name+(i.mode==="status"&&i.status==="low"?" (low)":"")).join("\n")).join("\n\n");
+  const ta=h("textarea",{id:"shopText",readonly:true,"aria-label":"Shopping list text"});ta.value=text;
+  return[...GROUPS.filter(g=>buy.some(i=>i.group===g)).map(g=>h("section",{class:"shop"},h("h2",{text:g}),h("ul",{},...buy.filter(i=>i.group===g).map(i=>
+      h("li",{},h("span",{text:i.name}),h("span",{class:"state "+(i.mode==="count"?"out":i.status),text:i.mode==="count"?"0 left":i.status}))))) ),
+    h("h2",{text:"Copy"}),ta,
+    h("div",{class:"btnrow"},h("button",{type:"button",class:"btn",onclick:async()=>{try{await navigator.clipboard.writeText(text);toast("Copied");}catch(e){ta.focus();ta.select();toast("Selected. Use Copy from the menu.");}}},"Copy list"))];}
+
+function viewAdd(){
+  const name=h("input",{type:"text",id:"addName",placeholder:"e.g. Sliced white mushrooms 8 oz",required:true});
+  const grp=h("select",{id:"addGroup"},...GROUPS.map(g=>h("option",{value:g},g)));
+  const cnt=h("input",{type:"number",id:"addCount",min:"0",value:"1",inputmode:"numeric"});
+  const unit=h("input",{type:"text",id:"addUnit",placeholder:"bags, portions, packs"});
+  const ub=h("input",{type:"date",id:"addUseBy"});
+  const countBox=h("div",{class:"btnrow"},h("label",{style:"flex:1"},"How many",cnt),h("label",{style:"flex:2"},"Unit",unit));
+  const modeCount=h("input",{type:"radio",name:"addMode",id:"addModeCount",value:"count",onchange:()=>countBox.hidden=false});
+  const modeStatus=h("input",{type:"radio",name:"addMode",id:"addModeStatus",value:"status",checked:true,onchange:()=>countBox.hidden=true});
+  countBox.hidden=true;
+  grp.addEventListener("change",()=>{const p=grp.value==="Proteins";modeCount.checked=p;modeStatus.checked=!p;countBox.hidden=!p;});
+  const form=h("form",{class:"form",onsubmit:async e=>{e.preventDefault();const n=name.value.trim();if(!n)return;
+    let id=slug(n);while(state.items.has(id))id+="-2";
+    const doc={name:n,group:grp.value,mode:modeCount.checked?"count":"status",count:modeCount.checked?Number(cnt.value)||0:null,unit:modeCount.checked?unit.value.trim():"",
+      status:modeCount.checked?null:"have",useBy:ub.value||"",note:"",order:999,checkedAt:new Date().toISOString()};
+    try{await state.db.collection("items").doc(id).set(doc);toast("Added "+n);name.value="";ub.value="";}catch(err){toast("Didn't add. Try again.");}}},
+    h("label",{},"Item",name),h("label",{},"Group",grp),
+    h("div",{class:"seg"},h("label",{},modeStatus,"Have / Low / Out"),h("label",{},modeCount,"Keep a count")),
+    countBox,h("label",{},"Use-by date (fresh meat, fish, leftovers)",ub),
+    h("div",{class:"btnrow"},h("button",{type:"submit",class:"btn"},"Add item")));
+  return form;}
+
+async function runScan(file){
+  state.scan={busy:true,rows:[],err:null};render();
+  const catalog=sorted().map(i=>({id:i.id,name:i.name,group:i.group,mode:i.mode}));
+  const prompt=`You are reading a grocery receipt photo for a home kitchen inventory. Stores are usually Trader Joe's, Costco or Grocery Outlet, so item names are abbreviated.
+For each food or drink line (skip bags, bottle deposits, tax, totals, non-food), return one entry. Combine repeated lines of the same product into one entry with the summed quantity.
+Match each line to the existing inventory item it refers to when one clearly fits; otherwise propose a new item with a plain readable name and one group from: ${GROUPS.join(", ")}.
+Existing inventory (id, name, group, mode): ${JSON.stringify(catalog)}
+Return ONLY JSON: {"store":"...","lines":[{"receipt":"text as printed","qty":1,"match_id":"existing id or null","name":"readable name","group":"one of the groups"}]}`;
+  try{const out=await state.sample.json(prompt,{images:[file],modelTier:"default"});
+    const lines=Array.isArray(out?.lines)?out.lines:[];
+    state.scan={busy:false,store:out?.store||"",rows:lines.map(l=>({...l,qty:Math.max(1,Number(l.qty)||1),keep:true,match_id:state.items.has(l.match_id)?l.match_id:null,group:GROUPS.includes(l.group)?l.group:"Pantry & starches"}))};}
+  catch(e){state.scan={busy:false,rows:[],err:e?.code==="not_granted"?"Reading receipts needs your OK. Allow Claude for this page, then try again.":e?.code==="rate_limited"?"Too many scans just now. Wait a minute and try again.":"Couldn't read that receipt. Try a sharper, flatter photo, or send it in chat."};}
+  render();}
+
+async function applyScan(){const rows=state.scan.rows.filter(r=>r.keep);const now=new Date().toISOString();
+  try{for(const r of rows){
+      if(r.match_id){const it=state.items.get(r.match_id);
+        const patch=it.mode==="count"?{count:(Number(it.count)||0)+r.qty}:{status:"have"};
+        await state.db.collection("items").doc(it.id).update({...patch,checkedAt:now});}
+      else{let id=slug(r.name);while(state.items.has(id))id+="-2";const prot=r.group==="Proteins";
+        await state.db.collection("items").doc(id).set({name:r.name,group:r.group,mode:prot?"count":"status",count:prot?r.qty:null,unit:"",status:prot?null:"have",useBy:"",note:"from receipt",order:999,checkedAt:now});}}
+    toast(`Added ${rows.length} from the receipt`);state.scan=null;setMode("list");}
+  catch(e){toast("Some lines didn't save. Check the list.");}}
+
+function viewScan(){
+  if(!state.sample)return h("p",{class:"notice",text:"Scanning isn't available in this view. Send the receipt photo in chat and Claude will add it."});
+  const file=h("input",{type:"file",id:"scanFile",accept:"image/*",onchange:e=>{const f=e.target.files&&e.target.files[0];if(f)runScan(f);}});
+  const intro=h("div",{class:"form"},h("label",{},"Receipt photo",file),h("p",{class:"sub",text:"Claude reads the receipt and matches each line to your list. Nothing changes until you tap Add."}));
+  const s=state.scan;if(!s)return intro;
+  if(s.busy)return[intro,h("p",{class:"notice",text:"Reading the receipt…"})];
+  if(s.err)return[intro,h("p",{class:"notice",text:s.err})];
+  if(!s.rows.length)return[intro,h("p",{class:"notice",text:"No food lines found on that photo."})];
+  return[intro,h("h2",{text:`${s.store||"Receipt"}: ${s.rows.length} lines`}),
+    ...s.rows.map((r,i)=>{const it=r.match_id&&state.items.get(r.match_id);
+      return h("div",{class:"scanrow"},
+        h("input",{type:"checkbox",id:"scan-"+i,checked:r.keep,"aria-label":"Add "+r.name,onchange:e=>{r.keep=e.target.checked;}}),
+        h("div",{class:"what"},h("div",{class:"name",text:it?it.name:r.name}),h("small",{text:(it?"updates existing":"new item · "+r.group)+" · receipt: "+r.receipt})),
+        h("span",{class:"pill",text:"×"+r.qty}));}),
+    h("div",{class:"btnrow",style:"margin-top:14px"},h("button",{type:"button",class:"btn",onclick:applyScan},"Add checked lines"),h("button",{type:"button",class:"btn ghost",onclick:()=>{state.scan=null;render();}},"Discard"))];}
+
+function viewWaste(){
+  const name=h("input",{type:"text",id:"wItem",placeholder:"e.g. Cooked rice",required:true});
+  const cooked=h("input",{type:"date",id:"wCooked"});
+  const amt=h("input",{type:"text",id:"wAmount",placeholder:"e.g. about 1 cup"});
+  const why=h("select",{id:"wReason"},...["Past 3-4 day leftover limit","Past use-by date","Spoiled before its date","Nobody ate it","Cooked too much","Other"].map(r=>h("option",{value:r},r)));
+  const form=h("form",{class:"form",onsubmit:async e=>{e.preventDefault();const n=name.value.trim();if(!n)return;
+    const d=todayISO();const age=cooked.value?-dayDiff(cooked.value):null;
+    try{await state.db.collection("waste").doc(d+"-"+slug(n)+"-"+Date.now().toString(36)).set({date:d,item:n,cooked:cooked.value||"",ageDays:age,amount:amt.value.trim(),reason:why.value,note:""});
+      toast("Logged "+n);name.value="";cooked.value="";amt.value="";}catch(err){toast("Didn't log. Try again.");}}},
+    h("label",{},"What got tossed",name),
+    h("div",{class:"btnrow"},h("label",{style:"flex:1"},"Cooked or bought",cooked),h("label",{style:"flex:1"},"Amount",amt)),
+    h("label",{},"Why",why),h("div",{class:"btnrow"},h("button",{type:"submit",class:"btn"},"Log waste")));
+  const list=[...state.waste].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(a.item||"").localeCompare(b.item||""));
+  if(!list.length)return[h("p",{class:"notice",text:"Nothing tossed yet. When something goes in the trash, log it here."}),form];
+  const days=[...new Set(list.map(w=>w.date))];
+  return[...days.map(d=>h("section",{class:"waste-day"},h("h2",{text:fmtDay(d)}),...list.filter(w=>w.date===d).map(w=>
+      h("div",{class:"wrow"},
+        h("div",{class:"top"},h("span",{class:"name",text:w.item}),w.ageDays!=null?h("span",{class:"age",text:w.ageDays+(w.ageDays===1?" day old":" days old")}):null),
+        h("div",{class:"meta"},w.amount?h("span",{text:w.amount}):null,w.cooked?h("span",{text:"made "+fmtDay(w.cooked)}):null),
+        w.reason?h("div",{class:"why",text:w.reason}):null,
+        w.note?h("div",{class:"lesson",text:w.note}):null)))),
+    h("h2",{text:"Log something tossed"}),form];}
+
+function emptyState(){return h("p",{class:"notice",text:state.ready?"No items yet. Add your first one with Add item.":"Loading your kitchen…"});}
+
+function setMode(m){state.mode=m;state.walkIdx=0;state.walkStart=new Date().toISOString();try{localStorage.setItem("inv-mode",m);}catch(e){}render();window.scrollTo({top:0});}
+document.querySelectorAll("nav.modes button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+
+function render(){
+  document.querySelectorAll("nav.modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===state.mode)));
+  summary();const v=$("#view");
+  if(!state.db&&state.ready){v.replaceChildren(h("p",{class:"notice",text:"This browser is blocking storage, so nothing can be saved here. Try a normal (not private) window."}));return;}
+  const out={list:viewList,walk:viewWalk,shop:viewShop,add:viewAdd,scan:viewScan,waste:viewWaste}[state.mode]();
+  v.replaceChildren(...[].concat(out));}
+
+render();
+(function(){
+  // Per-browser store shaped like the page's database calls. Nothing leaves this device.
+  const KEY="inv-template-v1";let data={items:{},waste:{}};
+  try{const raw=localStorage.getItem(KEY);if(raw)data=Object.assign(data,JSON.parse(raw));localStorage.setItem(KEY,JSON.stringify(data));}catch(e){state.ready=true;render();return;}
+  const subs={items:[],waste:[]};
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}};
+  const emit=c=>{const snap={docs:Object.entries(data[c]).map(([id,v])=>({id,data:()=>v}))};subs[c].forEach(f=>f(snap));};
+  const db={collection:c=>({
+    onSnapshot:(ok)=>{subs[c].push(ok);emit(c);return()=>{};},
+    doc:id=>({
+      set:async v=>{data[c][id]={...v};save();emit(c);},
+      update:async p=>{data[c][id]={...(data[c][id]||{}),...p};save();emit(c);},
+      delete:async()=>{delete data[c][id];save();emit(c);}})})};
+  state.db=db;state.sample=null;
+  db.collection("items").onSnapshot(snap=>{state.items=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));state.ready=true;render();});
+  db.collection("waste").onSnapshot(snap=>{state.waste=snap.docs.map(d=>({id:d.id,...d.data()}));render();});
+})();
+</script>
+
+</body></html>
