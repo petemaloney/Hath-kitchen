@@ -30,3 +30,7 @@ The first receipt I reconciled was within $0.08 on the 20 planned items I actual
 2. Replace the [brackets] with your own eaters, stores and equipment.
 3. Ask Claude to publish `inventory-template.html` as an artifact for you, or open the file in a browser.
 4. Start with "plan this week's dinners" and let it ask what's already in the house.
+
+## License
+
+MIT. Free to use, copy, and change. See LICENSE.
