@@ -1,21 +1,25 @@
-MIT License
-
 Copyright (c) 2026 Pete Maloney
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This repository uses two licenses, one for code and one for text.
+Both allow noncommercial use only.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Code: PolyForm Noncommercial License 1.0.0
+  Covers: inventory-template.html
+  Full text: LICENSE-POLYFORM-NONCOMMERCIAL.md
+  Also at: https://polyformproject.org/licenses/noncommercial/1.0.0
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Text: Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+  Covers: HATH-Kitchen-Instructions.md, README.md, and any other file not
+  listed under Code above
+  Full text: LICENSE-CC-BY-NC-4.0.txt
+  Also at: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+In plain terms: you may use, copy, share, and change everything here for
+noncommercial purposes. Credit Pete Maloney and keep these license notices
+with any copy you share. Commercial use needs a separate license from me.
+Contact gpetermaloney@gmail.com.
+
+Earlier versions: through commit 57c5f36 (October 16, 2026), this repository
+was released under the MIT License. Anyone who got a copy of those versions
+keeps the MIT rights to that copy. Everything published here after that
+commit is under the licenses above only.

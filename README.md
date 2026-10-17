@@ -33,4 +33,13 @@ The first receipt I reconciled was within $0.08 on the 20 planned items I actual
 
 ## License
 
-MIT. Free to use, copy, and change. See LICENSE.
+Source-available, free for noncommercial use. This is not an open source license.
+
+- **Code** (`inventory-template.html`): [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0).
+- **Text** (the instructions, this README, everything else): [Creative Commons Attribution-NonCommercial 4.0](https://creativecommons.org/licenses/by-nc/4.0/) (CC BY-NC 4.0).
+
+You can use, copy, share, and change any of it for anything noncommercial, as long as you credit me and keep the license notices. See [LICENSE](LICENSE) for which file falls under which license.
+
+Want to use it commercially? You need a separate license from me. Email gpetermaloney@gmail.com.
+
+Versions published through October 16, 2026 were released under the MIT License. If you got a copy then, those MIT rights stay with that copy. Everything after is under the licenses above only.
