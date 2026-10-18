@@ -179,7 +179,7 @@ async function write(id,patch){
 const setStatus=(it,s)=>write(it.id,{status:s});
 const setCount=(it,n)=>write(it.id,{count:Math.max(0,n)});
 
-function useByBadge(it){const d=dayDiff(it.useBy);if(d==null)return null;
+function useByBadge(it){if(!onHand(it))return null;const d=dayDiff(it.useBy);if(d==null)return null;
   if(d<0)return h("span",{class:"badge past",text:"past use-by "+fmtDay(it.useBy)});
   if(d===0)return h("span",{class:"badge soon",text:"use today"});
   if(d===1)return h("span",{class:"badge soon",text:"use tomorrow"});
@@ -219,7 +219,7 @@ function row(it){
 }
 
 const onHand=it=>it.mode==="count"?(Number(it.count)||0)>0:it.status!=="out";
-const useSoon=it=>{const d=dayDiff(it.useBy);return d!=null&&d<=1;};
+const useSoon=it=>{if(!onHand(it))return false;const d=dayDiff(it.useBy);return d!=null&&d<=1;};
 const FILTERS={onhand:{label:"On hand",test:onHand},checked:{label:"Checked today",test:checkedToday},buy:{label:"To buy",test:needsBuying},soon:{label:"Use by tomorrow",test:useSoon}};
 state.filter=null;
 function setFilter(f){state.filter=(f&&state.filter!==f)?f:null;if(state.mode!=="list")setMode("list");else render();}
