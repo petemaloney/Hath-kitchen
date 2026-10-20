@@ -102,6 +102,15 @@ textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--pa
 .spickwrap{display:grid;gap:8px}
 .spickwrap .btnrow input{flex:1;min-width:0}
 .badge.store{background:var(--chip);color:var(--ink)}
+.recipe{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;margin-top:12px}
+.recipe h3{font-size:1.1rem}
+.uses{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.uses li{display:flex;justify-content:space-between;gap:10px;font-size:.92rem;border-bottom:1px dashed var(--line);padding:4px 0}
+.uses li .take{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.uses li.missing{color:var(--out)}
+.confirm{display:grid;gap:10px;background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:12px}
+.useRow{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}
+.useRow input,.useRow select{width:auto;max-width:110px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-weight:700;font-size:.9rem;z-index:10}
 @media (prefers-reduced-motion:no-preference){.progress span{transition:width .2s}}
 /* Wide screens (iPad landscape, desktop): fill the width, columns of groups, larger type and targets. Phone layout unchanged. */
@@ -125,6 +134,7 @@ textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--pa
   <div class="summary" id="summary"></div>
   <nav class="modes" aria-label="Mode">
     <button type="button" data-mode="list" aria-pressed="true">List</button>
+    <button type="button" data-mode="cook" aria-pressed="false">Cooked it</button>
     <button type="button" data-mode="walk" aria-pressed="false">Walk-through</button>
     <button type="button" data-mode="shop" aria-pressed="false">Shopping list</button>
     <button type="button" data-mode="add" aria-pressed="false">Add item</button>
@@ -136,7 +146,7 @@ textarea{width:100%;min-height:160px;font:.95rem var(--body);background:var(--pa
 
 <script>
 const GROUPS=["Proteins","Produce","Dairy & eggs","Pantry & starches","Frozen sides & meals","Breakfast & bread","Snacks","Drinks"];
-const state={waste:[],walkStart:new Date().toISOString(),db:null,sample:null,items:new Map(),mode:"list",walkIdx:0,skipToday:true,openEdit:null,scan:null,ready:false};
+const state={recipes:[],cooking:null,draft:null,waste:[],walkStart:new Date().toISOString(),db:null,sample:null,items:new Map(),mode:"list",walkIdx:0,skipToday:true,openEdit:null,scan:null,ready:false};
 state.store=null;try{const st=localStorage.getItem("inv-store");if(st)state.store=st;}catch(e){}
 try{const m=localStorage.getItem("inv-mode");if(m&&m!=="scan")state.mode=m;}catch(e){}
 
@@ -354,6 +364,62 @@ function viewWaste(){
 
 function emptyState(){return h("p",{class:"notice",text:state.ready?"No items yet. Add your first one with Add item.":"Loading your kitchen…"});}
 
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function addDaysISO(n){const d=new Date();d.setDate(d.getDate()+n);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function cookLabel(){const d=new Date();return `${DOW[d.getDay()]} ${d.getMonth()+1}/${d.getDate()}`;}
+function takeText(u,it){if(!it)return "not in inventory";if(it.mode==="count"){const n=Number(u.take)||1;return `−${n} ${it.unit||""}`.trim();}return u.take==="low"?"mark Low":"mark Out";}
+async function cookIt(r,left){
+  if(!state.db){toast("Can't save in this view");return;}
+  const now=new Date().toISOString();let n=0;
+  try{
+    for(const u of (r.uses||[])){const it=state.items.get(u.id);if(!it)continue;
+      const patch=it.mode==="count"?{count:Math.max(0,(Number(it.count)||0)-(Number(u.take)||1))}:{status:u.take==="low"?"low":"out"};
+      await state.db.collection("items").doc(it.id).update({...patch,checkedAt:now});n++;}
+    if(left){let id=slug("leftover "+(r.leftoverName||r.name)+" "+todayISO());while(state.items.has(id))id+="-2";
+      await state.db.collection("items").doc(id).set({name:`Leftover: ${r.leftoverName||r.name} (cooked ${cookLabel()})`,group:r.leftoverGroup||"Proteins",mode:"status",count:null,unit:"",status:"have",useBy:addDaysISO(3),note:left+". Give it a slot within 2 days",stores:[],order:5,checkedAt:now});}
+    try{await state.db.collection("recipes").doc(r.id).update({lastCooked:todayISO()});}catch(e){}
+    state.cooking=null;toast(`Updated ${n} item${n===1?"":"s"}`+(left?" and logged the leftovers":""));setMode("list");
+  }catch(e){toast(e&&e.code==="not_granted"?"You can view but not change this list":"Some items didn't save. Check the list.");render();}}
+function recipeCard(r){
+  const uses=(r.uses||[]).map(u=>{const it=state.items.get(u.id);return h("li",{class:it?"":"missing"},h("span",{text:it?it.name:(u.label||u.id)}),h("span",{class:"take",text:takeText(u,it)}));});
+  const head=h("div",{},h("h3",{text:r.name}),h("div",{class:"meta"},r.note?h("span",{text:r.note}):null,r.lastCooked?h("span",{text:"last cooked "+fmtDay(r.lastCooked)}):h("span",{text:"not cooked yet"})));
+  if(state.cooking!==r.id)return h("div",{class:"recipe"},head,h("ul",{class:"uses"},...uses),
+    h("div",{class:"btnrow"},h("button",{type:"button",class:"btn",onclick:()=>{state.cooking=r.id;render();}},"Cooked it"),
+      h("button",{type:"button",class:"btn ghost",onclick:e=>{const b=e.currentTarget;if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Tap again to remove";return;}
+        state.db.collection("recipes").doc(r.id).delete().then(()=>toast("Removed "+r.name)).catch(()=>toast("Didn't remove. Try again."));}},"Remove recipe")));
+  const left=h("input",{type:"text",id:"left-"+r.id,placeholder:"e.g. 1 thigh, about 1 cup rice"});
+  return h("div",{class:"recipe"},head,h("ul",{class:"uses"},...uses),
+    h("div",{class:"confirm"},
+      h("label",{},"What's left over? Leave blank if nothing.",left),
+      h("p",{class:"sub",text:"Leftovers get their own row with a use-by date 3 days out."}),
+      h("div",{class:"btnrow"},h("button",{type:"button",class:"btn",onclick:()=>cookIt(r,left.value.trim())},"Take these out"),
+        h("button",{type:"button",class:"btn ghost",onclick:()=>{state.cooking=null;render();}},"Cancel"))));}
+function recipeForm(){
+  const d=state.draft||(state.draft={name:"",leftoverName:"",leftoverGroup:"Proteins",uses:[]});
+  const nm=h("input",{type:"text",id:"rName",value:d.name,placeholder:"e.g. Chicken thighs, lemon pan sauce",oninput:e=>d.name=e.target.value});
+  const ln=h("input",{type:"text",id:"rLeft",value:d.leftoverName,placeholder:"e.g. lemon chicken thighs",oninput:e=>d.leftoverName=e.target.value});
+  const lg=h("select",{id:"rLeftGroup",onchange:e=>d.leftoverGroup=e.target.value},...GROUPS.map(g=>h("option",{value:g,selected:g===d.leftoverGroup},g)));
+  const pool=sorted().filter(onHand).filter(i=>!d.uses.some(u=>u.id===i.id));
+  const pick=h("select",{id:"rPick"},h("option",{value:""},"Pick an ingredient"),...pool.map(i=>h("option",{value:i.id},i.name)));
+  const rows=d.uses.map((u,ix)=>{const it=state.items.get(u.id);
+    const ctl=it&&it.mode==="count"?h("input",{type:"number",min:"1",id:"rTake-"+ix,value:String(u.take||1),"aria-label":"How many",oninput:e=>u.take=Number(e.target.value)||1})
+      :h("select",{id:"rTake-"+ix,"aria-label":"After cooking",onchange:e=>u.take=e.target.value},...["out","low"].map(v=>h("option",{value:v,selected:u.take===v},v==="out"?"Out":"Low")));
+    return h("div",{class:"useRow"},h("span",{text:it?it.name:u.id}),ctl,h("button",{type:"button",class:"btn ghost",onclick:()=>{d.uses.splice(ix,1);render();}},"Drop"));});
+  return h("form",{class:"form",onsubmit:async e=>{e.preventDefault();const n=d.name.trim();if(!n||!d.uses.length){toast("Add a name and at least one ingredient");return;}
+      let id=slug(n);while(state.recipes.some(r=>r.id===id))id+="-2";
+      try{await state.db.collection("recipes").doc(id).set({name:n,leftoverName:d.leftoverName.trim(),leftoverGroup:d.leftoverGroup,uses:d.uses.map(u=>({id:u.id,take:u.take})),note:"",lastCooked:""});state.draft=null;toast("Saved "+n);}
+      catch(err){toast("Didn't save. Try again.");}}},
+    h("label",{},"Recipe name",nm),
+    h("div",{class:"btnrow"},h("label",{style:"flex:2"},"Leftovers are called",ln),h("label",{style:"flex:1"},"Leftover group",lg)),
+    h("div",{class:"btnrow"},pick,h("button",{type:"button",class:"btn ghost",onclick:()=>{const id=pick.value;if(!id)return;const it=state.items.get(id);d.uses.push({id,take:it.mode==="count"?1:"out"});render();}},"Add ingredient")),
+    ...rows,
+    h("div",{class:"btnrow"},h("button",{type:"submit",class:"btn"},"Save recipe")));}
+function viewCook(){
+  const list=[...state.recipes].sort((a,b)=>(a.order??99)-(b.order??99)||a.name.localeCompare(b.name));
+  const intro=h("p",{class:"sub",text:"Tap Cooked it after a meal. The ingredients come off the list and any leftovers get a row with a use-by date."});
+  return[intro,...(list.length?list.map(recipeCard):[h("p",{class:"notice",text:"No recipes yet. Save one below."})]),
+    h("h2",{text:"Add a recipe"}),recipeForm()];}
+
 function setMode(m){state.mode=m;state.walkIdx=0;state.walkStart=new Date().toISOString();try{localStorage.setItem("inv-mode",m);}catch(e){}render();window.scrollTo({top:0});}
 document.querySelectorAll("nav.modes button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
 
@@ -361,15 +427,15 @@ function render(){
   document.querySelectorAll("nav.modes button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.mode===state.mode)));
   summary();const v=$("#view");
   if(!state.db&&state.ready){v.replaceChildren(h("p",{class:"notice",text:"This browser is blocking storage, so nothing can be saved here. Try a normal (not private) window."}));return;}
-  const out={list:viewList,walk:viewWalk,shop:viewShop,add:viewAdd,scan:viewScan,waste:viewWaste}[state.mode]();
+  const out={cook:viewCook,list:viewList,walk:viewWalk,shop:viewShop,add:viewAdd,scan:viewScan,waste:viewWaste}[state.mode]();
   v.replaceChildren(...[].concat(out));}
 
 render();
 (function(){
   // Per-browser store shaped like the page's database calls. Nothing leaves this device.
-  const KEY="inv-template-v1";let data={items:{},waste:{}};
+  const KEY="inv-template-v1";let data={items:{},waste:{},recipes:{}};
   try{const raw=localStorage.getItem(KEY);if(raw)data=Object.assign(data,JSON.parse(raw));localStorage.setItem(KEY,JSON.stringify(data));}catch(e){state.ready=true;render();return;}
-  const subs={items:[],waste:[]};
+  const subs={items:[],waste:[],recipes:[]};
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}};
   const emit=c=>{const snap={docs:Object.entries(data[c]).map(([id,v])=>({id,data:()=>v}))};subs[c].forEach(f=>f(snap));};
   const db={collection:c=>({
@@ -381,6 +447,7 @@ render();
   state.db=db;state.sample=null;
   db.collection("items").onSnapshot(snap=>{state.items=new Map(snap.docs.map(d=>[d.id,{id:d.id,...d.data()}]));state.ready=true;render();});
   db.collection("waste").onSnapshot(snap=>{state.waste=snap.docs.map(d=>({id:d.id,...d.data()}));render();});
+  db.collection("recipes").onSnapshot(snap=>{state.recipes=snap.docs.map(d=>({id:d.id,...d.data()}));if(state.mode==="cook")render();});
 })();
 </script>
 
