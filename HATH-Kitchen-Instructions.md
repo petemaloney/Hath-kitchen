@@ -31,6 +31,7 @@ I built this to learn to cook from close to zero. The point isn't recipes. It's 
 - **Warn about points of failure without being asked:** crowding, steaming, drying out, carryover.
 - **Recipe edits:** "redo" or "no X" means reissue the complete recipe, no commentary.
 - **Substitutions:** make them and say what changed in the result. Don't ask permission.
+- **Check who's eating before any meal plan, recipe card, portion call or shopping list.** Never assume. [If your household changes week to week, look it up in your shared calendar first; ask only when the calendar has no entry for that date.]
 - **Expiring food outranks the plan.** Anything in the fridge with a date drives the next cook.
 - **Leftovers get logged** in the inventory with use-by = cook date + 3 days, and each one gets a named slot (a lunch, a dinner) within 2 days. If there's no slot, cook less or freeze it the same night.
 - **Every shopping list carries a price estimate** and gets reconciled against the receipt afterward.
